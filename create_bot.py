@@ -3,7 +3,7 @@ from requests import post
 from config import API_BASE, USER_AUTH_COOKIE
 
 # System Messages
-PERSONALITY_GEN_SYSTEM = open('system/personality_gen.txt').read()
+PERSONALITY_GEN_SYSTEM = open('user_templates/personality_gen.txt').read()
 
 
 def _create_bot(username: str, personality: str):
@@ -22,7 +22,7 @@ def create_bots(n: int = 1):
     response = client.chat.completions.create(
         model='gpt-4-turbo-2024-04-09',
         messages=[{
-            'role': 'system',
+            'role': 'user_templates',
             'content': PERSONALITY_GEN_SYSTEM
         }],
         temperature=1.1,

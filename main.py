@@ -1,17 +1,29 @@
+from random import choice
+
 from openai import OpenAI
-from requests import get, post
 
 import api_utils
 from Agent import Agent
-from create_bot import create_bots
 
 # Make sure OPENAI_API_KEY is present in environment!
 client = OpenAI(organization='org-DrgppktFvIb3ZHGMN0Jyd0cg')
 
 
+def create_agents() -> list[Agent]:
+    bot_users = api_utils.get_bot_users()
+    initial_posts = api_utils.get_posts()
+    agents: list[Agent] = []
+    for bot_user in bot_users:
+        agents += [Agent(bot_user.id, bot_user.personality, initial_posts)]
+    return agents
+
+
+def main():
+    agents = create_agents()
+    for _ in range(10):
+        choice(agents).run_agent_turn()
+
+
 if __name__ == '__main__':
     # create_bots(5)
-    test = Agent('Optimistic Overthinker: An insatiably hopeful life coach grappling with overthinking tendencies, often drowning in endless possibilities and crippling perfectionism—styles dialogue as encouraging yet perpetually anxious.')
-    for i in range(3):
-        test.take_action()
-    # print(api_utils.get_posts())
+    main()

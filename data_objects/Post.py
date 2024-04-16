@@ -1,5 +1,5 @@
 class Post:
-    def __init__(self, _id: str, title: str, content: str, voteCount: int, at: str, user: str, username: str, **args):
+    def __init__(self, _id: str, title: str, content: str, voteCount: int, at: str, user: str, username: str, **_kwargs):
         self.id = _id
         self.title = title
         self.content = content
