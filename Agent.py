@@ -5,6 +5,7 @@ from typing import Iterable, Any
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 import api_utils
+import image_utils
 from data_objects.Post import Post
 
 AGENT_SYSTEM = open('user_templates/agent.txt').read()
@@ -18,7 +19,7 @@ def _parse_raw_action(raw_action: str) -> (str, str):
 
 
 def _format_post(post: Post) -> str:
-    return f'ID: {post.id}\nVotes: {post.votes}\n<<TITLE>>\n{post.title}\n<<BODY>>\n{post.content}'
+    return f'{post.id}:{{"votes":{post.votes},"title":"{post.title}","body":"{post.content}"}}'
 
 
 def _get_formatted_posts(posts: Iterable[Post]) -> str:
@@ -79,18 +80,28 @@ class Agent:
         # This is lazily fetched once required
         self.token: str | None = None
 
+    def prune_history(self, target_n: int):
+        # Remove excess history
+        removed_n = 0
+        while len(self.messages) > target_n or len(self.messages) % 4 != 0:
+            self.messages.pop(1)
+            removed_n += 1
+        self.log.debug('Pruned %d messages', removed_n)
+
     def get_token(self) -> str:
-        self.log.debug('Token does not exist, requesting...')
         if self.token is None:
+            self.log.debug('Token does not exist, requesting...')
             self.token = api_utils.get_full_bot_user(self.user_id).token
         return self.token
 
     def get_actions(self) -> Iterable[str]:
         actions = ['COMMENT', 'VOTE', 'CREATE']
-        if self.last_read > 5:
-            actions += ['READ']
+        # Let agent read new posts if it hasn't done so in 5 turns
+        # Temporarily disabled (not implemented)
+        # if self.last_read > 5:
+        #     actions += ['READ']
         actions += ['footer']
-        return 'Actions:\n' + '\n'.join([ACTIONS[act] for act in actions])
+        return 'You MUST reply with one of the following actions:\n' + '\n'.join([ACTIONS[act] for act in actions])
 
     def handle_action(self, action: Any, payload: Any | None):
         match action['action']:
@@ -100,15 +111,21 @@ class Agent:
                 self.log.info('Created comment with ID: %s',
                               api_utils.create_comment(action['id'], payload, self.get_token()))
             case 'CREATE':
+                image_url: str | None = None
+                if 'image' in payload and isinstance(payload['image'], str) and payload['image'].strip() != '':
+                    image_url = image_utils.generate_image_and_upload(payload['image'].strip())
                 self.log.info('Created post with ID: %s',
-                              api_utils.create_post(payload['title'], payload['body'], self.get_token()))
+                              api_utils.create_post(payload['title'], payload['body'], image_url, self.get_token()))
+            case 'VOTE':
+                api_utils.update_vote(action['id'], payload, self.get_token())
+                self.log.info('Updated vote for post: id=%s, vote=%d', action['id'], payload)
 
     def run_agent_turn(self):
         self.log.info('Running turn...')
         # Maintain our own copy of messages because we do not want to overly
         # inflate the context of the "master" messages.
         messages = self.messages[:]
-        if len(messages) != 1:
+        if len(self.messages) != 1:
             messages += [{
                 'role': 'user',
                 'content': self.get_actions()
@@ -116,9 +133,12 @@ class Agent:
 
         # Get action
         action_msg, action = _get_model_message(messages)
-        logging.debug('Took action: %s', action)
+        self.log.debug('Took action: %s', str(action))
+        if 'action' not in action:
+            self.log.error('Payload does not contain action!')
+            return
         if action['action'] not in INSTRUCTIONS:
-            logging.error('Model returned invalid action!')
+            self.log.error('Model returned invalid action!')
             return
 
         # Add instructions
@@ -132,15 +152,21 @@ class Agent:
 
         # Get action payload and handle action
         payload_msg, payload = _get_model_message(messages)
-        logging.debug('Action payload:', payload)
-        self.handle_action(action, payload)
+        self.log.debug('Action payload: %s', str(payload))
+        try:
+            self.handle_action(action, payload)
+        except Exception as e:
+            self.log.error('Action handle error: %s, payload: %s', str(e), str(payload))
+            return
 
         # Update master messages state with the minimum of what's required to maintain stateful-ness
         self.last_read += 1
+        if len(self.messages) != 1:
+            self.messages += [{
+                'role': 'user',
+                'content': 'Actions removed'
+            }]
         self.messages += [{
-            'role': 'user',
-            'content': 'Actions removed'
-        }, {
             'role': action_msg.role,
             'content': action_msg.content
         }, {
@@ -150,4 +176,5 @@ class Agent:
             'role': payload_msg.role,
             'content': _summarise_response(action['action'], payload)
         }]
-        print(json.dumps(self.messages, indent=2, ensure_ascii=False))
+        self.prune_history(12)
+        # print(json.dumps(self.messages, indent=2, ensure_ascii=False))

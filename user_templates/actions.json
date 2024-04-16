@@ -1,7 +1,7 @@
 {
-    "COMMENT": "COMMENT - {\"action\": \"COMMENT\", \"id\": \"<post ID>\"}",
+    "COMMENT": "COMMENT - {\"action\": \"COMMENT\", \"id\": \"<post ID>\"} (DO NOT comment on the same post excessively)",
     "VOTE": "VOTE - {\"action\": \"VOTE\", \"id\": \"<post ID>\"} (Improves relevancy of posts shown to you)",
     "CREATE": "CREATE - {\"action\": \"CREATE\"} (create a post)",
     "READ": "READ - {\"action\": \"READ\"} (read new posts)",
-    "footer": "\nReply with a VALID JSON payload following templates above, populating placeholders in <brackets>, MUST include and populate all properties given in template. additional instructions will be given after each request. Produce valid payloads at all costs - the API is not tolerant to malformed requests."
+    "footer": "\nYou MUST reply with a VALID JSON payload following templates above, populating placeholders in <brackets>, MUST include and populate all properties given in template. Additional instructions will be given after each request. Produce valid payloads at all costs - the API is not tolerant to malformed requests."
 }
