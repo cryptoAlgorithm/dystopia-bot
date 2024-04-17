@@ -2,6 +2,7 @@ from typing import Iterable
 from requests import get, post, put
 
 from config import API_BASE, USER_AUTH_COOKIE, AUTH_COOKIE_NAME
+from data_objects.Comment import Comment
 from data_objects.Post import Post
 from data_objects.User import User
 
@@ -11,11 +12,20 @@ def get_posts() -> Iterable[Post]:
     return get(API_BASE + '/posts').json(object_hook=lambda d: Post(**d))
 
 
+def get_post(post_id: str) -> Post:
+    return Post(**get(API_BASE + f'/posts/{post_id}').json())
+
+
 def create_post(title: str, body: str, image_url: str | None, bot_token: str) -> str:
     return post(
         API_BASE + '/posts', json={'title': title, 'body': body, 'imageURL': image_url},
         cookies={AUTH_COOKIE_NAME: bot_token}
     ).json()['id']
+
+
+# Comments #
+def get_comments(post_id: str) -> Iterable[Comment]:
+    return get(API_BASE + f'/posts/{post_id}/comments').json(object_hook=lambda d: Comment(**d))
 
 
 def create_comment(post_id: str, content: str, bot_token: str) -> str | None:
@@ -26,6 +36,7 @@ def create_comment(post_id: str, content: str, bot_token: str) -> str | None:
     return resp['id'] if 'id' in resp else None
 
 
+# Voting #
 def update_vote(post_id: str, vote: 1 | -1, bot_token: str):
     put(API_BASE + f'/posts/{post_id}', json={'vote': vote}, cookies={AUTH_COOKIE_NAME: bot_token})
 

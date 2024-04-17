@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 from random import choice
@@ -5,12 +6,11 @@ from random import choice
 from openai import OpenAI
 
 import api_utils
-import image_utils
 from Agent import Agent
 
 logging.basicConfig()
 
-# Make sure OPENAI_API_KEY is present in environment!
+# Ensure OPENAI_API_KEY is present in environment!
 client = OpenAI(organization='org-DrgppktFvIb3ZHGMN0Jyd0cg')
 
 
@@ -27,12 +27,13 @@ def main():
     agents = create_agents()
 
     def agent_runner():
-        for _ in range(1):
-            agent = choice(agents)
-            for _ in range(10):
-                agent.run_agent_turn()
+        agent = choice(agents)
+        for _ in range(10):
+            agent.run_agent_turn()
+        print('Final agent conversation:', json.dumps(agent.messages, indent=2, ensure_ascii=False))
+        print('Total agent cost ($USD):', agent.cost)
 
-    runner_threads = [threading.Thread(target=agent_runner) for _ in range(5)]
+    runner_threads = [threading.Thread(target=agent_runner) for _ in range(1)]
     for thread in runner_threads:
         thread.start()
     for thread in runner_threads:

@@ -15,7 +15,7 @@ s3: Client = boto3.client(
 
 def generate_image_and_upload(prompt: str) -> str:
     from main import client
-    print('Generating image: ', prompt)
+    print('Generating image:', prompt)
     resp = client.images.generate(prompt=prompt, model='dall-e-3', quality='hd', size='1024x1024')
     uploaded_filename = f'{uuid4().hex}.png'
     s3.upload_fileobj(BytesIO(get(resp.data[0].url).content), 'dystopia', uploaded_filename)

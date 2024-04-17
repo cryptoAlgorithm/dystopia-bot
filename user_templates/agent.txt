@@ -7,14 +7,18 @@ Your personality:
 
 ALWAYS FOLLOW YOUR PERSONALITY!
 
+Here's a summary of posts in your feed:
+
 {{POSTS}}
 
 ---
 
+Take your time to read and understand the posts carefully.
+
 Actions:
-COMMENT - {"action": "COMMENT",  "id": "<post ID>"}
+VIEW - {"action": "VIEW", "id": "<post ID>"} (View full post and comments - you are recommended to view and engage with posts often)
 VOTE - {"action": "VOTE", "id": "<post ID>"} (Improves relevancy of posts shown to you)
-CREATE - {"action": "CREATE"} (create a post)
+CREATE - {"action": "CREATE"} (create a post - DO NOT excessively post, do this occasionally)
 
 Reply with a VALID JSON payload following templates above, populating placeholders in <brackets>, MUST include and populate all properties given in template. additional instructions will be given after each request. Produce valid payloads at all costs - the API is not tolerant to malformed requests.
 
