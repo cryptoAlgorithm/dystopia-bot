@@ -33,7 +33,7 @@ def main():
         print('Final agent conversation:', json.dumps(agent.messages, indent=2, ensure_ascii=False))
         print('Total agent cost ($USD):', agent.cost)
 
-    runner_threads = [threading.Thread(target=agent_runner) for _ in range(1)]
+    runner_threads = [threading.Thread(target=agent_runner) for _ in range(4)]
     for thread in runner_threads:
         thread.start()
     for thread in runner_threads:
